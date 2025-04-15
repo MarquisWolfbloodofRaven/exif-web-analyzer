@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisador EXIF</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .drop-zone {
+            border: 2px dashed #5D5CDE;
+            transition: all 0.3s ease;
+        }
+        .drop-zone.active {
+            border-color: #3e3d9d;
+            background-color: rgba(93, 92, 222, 0.1);
+        }
+        .dark .drop-zone {
+            border-color: #7a79e0;
+        }
+        .dark .drop-zone.active {
+            border-color: #9998e9;
+            background-color: rgba(93, 92, 222, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-200">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <h1 class="text-3xl font-bold text-center mb-6 text-primary dark:text-primary">Analisador de Metadados EXIF</h1>
+
+        <div class="drop-zone rounded-lg p-8 text-center mb-8 cursor-pointer bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700">
+            <div id="upload-icon" class="mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+            </div>
+            <p class="text-lg font-medium mb-2">Arraste e solte sua imagem aqui</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Ou clique para selecionar</p>
+            <p id="drop-info" class="text-xs text-gray-400 dark:text-gray-500 italic">Formatos aceitos: JPG, JPEG, PNG, HEIC, TIFF</p>
+            <input type="file" id="file-input" class="hidden" accept="image/*">
+        </div>
+
+        <div id="loading" class="hidden flex justify-center items-center my-8">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+
+        <div id="error-message" class="hidden bg-red-100 dark:bg-red-900 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded mb-6">
+            <p id="error-text" class="font-medium"></p>
+        </div>
+
+        <div id="image-preview" class="hidden mb-8">
+            <h2 class="text-xl font-semibold mb-4">Imagem Carregada:</h2>
+            <div class="flex justify-center">
+                <img id="preview" class="max-h-96 max-w-full object-contain rounded-lg border border-gray-200 dark:border-gray-700" src="" alt="Preview da imagem">
+            </div>
+        </div>
+
+        <div id="exif-data" class="hidden">
+            <h2 class="text-xl font-semibold mb-4">Metadados EXIF:</h2>
+
+            <div class="mb-6 bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <h3 class="text-lg font-medium mb-3">📅 Informações de Data</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="p-3 bg-white dark:bg-gray-700 rounded shadow-sm">
+                        <p class="text-sm font-medium">Data Original:</p>
+                        <p id="datetime-original" class="text-base">-</p>
+                    </div>
+                    <div class="p-3 bg-white dark:bg-gray-700 rounded shadow-sm">
+                        <p class="text-sm font-medium">Data de Criação do Arquivo:</p>
+                        <p id="datetime" class="text-base">-</p>
+                    </div>
+                    <div class="p-3 bg-white dark:bg-gray-700 rounded shadow-sm">
+                        <p class="text-sm font-medium">Data de Modificação:</p>
+                        <p id="datetime-digitized" class="text-base">-</p>
+                    </div>
+                    <div class="p-3 bg-white dark:bg-gray-700 rounded shadow-sm">
+                        <p class="text-sm font-medium">Status de Modificação:</p>
+                        <p id="modification-status" class="text-base">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-6 bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <h3 class="text-lg font-medium mb-3">🛠️ Informações de Software</h3>
+                <div class="p-3 bg-white dark:bg-gray-700 rounded shadow-sm">
+                    <p class="text-sm font-medium">Software de Edição:</p>
+                    <p id="software" class="text-base">-</p>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <h3 class="text-lg font-medium mb-3">📜 Todos os Metadados EXIF</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white dark:bg-gray-700 rounded-lg overflow-hidden">
+                        <thead class="bg-gray-100 dark:bg-gray-600">
+                            <tr>
+                                <th class="py-2 px-4 text-left">Tag</th>
+                                <th class="py-2 px-4 text-left">Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="all-metadata">
+                            <tr>
+                                <td colspan="2" class="py-2 px-4 text-center text-gray-500 dark:text-gray-400">Nenhum dado EXIF encontrado</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            document.documentElement.classList.toggle('dark', event.matches);
+        });
+
+        const dropZone = document.querySelector('.drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const imagePreview = document.getElementById('image-preview');
+        const preview = document.getElementById('preview');
+        const exifDataSection = document.getElementById('exif-data');
+        const errorMessage = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+        const loadingIndicator = document.getElementById('loading');
+
+        const datetimeOriginal = document.getElementById('datetime-original');
+        const datetime = document.getElementById('datetime');
+        const datetimeDigitized = document.getElementById('datetime-digitized');
+        const modificationStatus = document.getElementById('modification-status');
+        const software = document.getElementById('software');
+        const allMetadata = document.getElementById('all-metadata');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, e => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('active'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('active'), false);
+        });
+
+        dropZone.addEventListener('drop', e => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) handleFiles(files);
+        });
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', function () {
+            if (this.files.length > 0) handleFiles(this.files);
+        });
+
+        function handleFiles(files) {
+            const file = files[0];
+            if (!file.type.match('image.*')) {
+                showError('O arquivo selecionado não é uma imagem.');
+                return;
+            }
+        
+            hideError();
+            loadingIndicator.classList.remove('hidden');
+        
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                preview.src = e.target.result;
+                imagePreview.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        
+            // Use o arquivo diretamente com EXIF.getData
+            EXIF.getData(file, function () {
+                loadingIndicator.classList.add('hidden');
+                const tags = EXIF.getAllTags(this);
+                if (tags && Object.keys(tags).length > 0) {
+                    displayExifData(this);
+                } else {
+                    showError('Nenhum metadado EXIF encontrado nesta imagem.');
+                }
+            });
+        }
+
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.classList.remove('hidden');
+            loadingIndicator.classList.add('hidden');
+            exifDataSection.classList.add('hidden');
+        }
+
+        function hideError() {
+            errorMessage.classList.add('hidden');
+        }
+
+        function displayExifData(img) {
+            exifDataSection.classList.remove('hidden');
+
+            const origDate = EXIF.getTag(img, 'DateTimeOriginal') || 'Desconhecido';
+            const createDate = EXIF.getTag(img, 'DateTime') || 'Desconhecido';
+            const modDate = EXIF.getTag(img, 'DateTimeDigitized') || 'Desconhecido';
+
+            datetimeOriginal.textContent = formatDateTime(origDate);
+            datetime.textContent = formatDateTime(createDate);
+            datetimeDigitized.textContent = formatDateTime(modDate);
+
+            if (origDate !== 'Desconhecido' && modDate !== 'Desconhecido' && origDate !== modDate) {
+                modificationStatus.textContent = '⚠️ A imagem pode ter sido alterada!';
+                modificationStatus.classList.add('text-yellow-600', 'dark:text-yellow-400', 'font-medium');
+            } else {
+                modificationStatus.textContent = '✅ As datas são coerentes, sem sinais de alteração.';
+                modificationStatus.classList.add('text-green-600', 'dark:text-green-400', 'font-medium');
+            }
+
+            const softwareInfo = EXIF.getTag(img, 'Software') || 'Não encontrado';
+            software.textContent = softwareInfo;
+
+            const tags = EXIF.getAllTags(img);
+            allMetadata.innerHTML = '';
+            for (const [key, value] of Object.entries(tags)) {
+                const row = document.createElement('tr');
+                row.className = 'border-t border-gray-200 dark:border-gray-600';
+
+                const tagCell = document.createElement('td');
+                tagCell.className = 'py-2 px-4 font-medium';
+                tagCell.textContent = key;
+
+                const valueCell = document.createElement('td');
+                valueCell.className = 'py-2 px-4';
+                valueCell.textContent = key.includes('DateTime') ? formatDateTime(value) :
+                    (typeof value === 'object' ? JSON.stringify(value) : value);
+
+                row.appendChild(tagCell);
+                row.appendChild(valueCell);
+                allMetadata.appendChild(row);
+            }
+        }
+
+        function formatDateTime(dateTimeStr) {
+            if (dateTimeStr === 'Desconhecido') return dateTimeStr;
+            const parts = dateTimeStr.split(' ');
+            if (parts.length !== 2) return dateTimeStr;
+            return `${parts[0].replace(/:/g, '-')} ${parts[1]}`;
+        }
+    </script>
+</body>
+</html>
