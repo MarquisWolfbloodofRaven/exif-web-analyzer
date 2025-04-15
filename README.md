@@ -77,7 +77,7 @@ Pull requests are welcome! Feel free to fork and improve.
 If you find any bugs or want new features, open an issue!
 
 📜 License
-MIT © Your Name
+MIT © MarquisWolfbloodRaven
 
 🙌 Acknowledgements
 Tailwind CSS
