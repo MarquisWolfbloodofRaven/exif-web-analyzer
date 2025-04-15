@@ -1,3 +1,5 @@
+
+<!--
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -261,5 +263,98 @@
             return `${parts[0].replace(/:/g, '-')} ${parts[1]}`;
         }
     </script>
+</body>
+</html>
+-->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Analisador EXIF</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                    },
+                },
+            },
+        };
+    </script>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-200">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <h1 class="text-3xl font-bold text-center mb-6 text-primary">Analisador de Metadados EXIF</h1>
+
+        <div class="drop-zone" role="button" aria-label="Área para arrastar e soltar imagens">
+            <div id="upload-icon" class="mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+            </div>
+            <p class="text-lg font-medium mb-2">Arraste e solte sua imagem aqui</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Ou clique para selecionar</p>
+            <p id="drop-info" class="text-xs text-gray-400 dark:text-gray-500 italic">
+                Formatos aceitos: JPG, JPEG, PNG, HEIC, TIFF
+            </p>
+            <input type="file" id="file-input" class="hidden" accept="image/*" />
+        </div>
+
+        <div id="loading" class="hidden flex flex-col justify-center items-center my-8">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            <p class="mt-4 text-primary dark:text-primary">Carregando...</p>
+        </div>
+
+        <div id="error-message" class="hidden bg-red-100 dark:bg-red-900 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded mb-6">
+            <p id="error-text" class="font-medium"></p>
+        </div>
+
+        <div id="image-preview" class="hidden mb-8">
+            <h2 class="text-xl font-semibold mb-4">Imagem Carregada:</h2>
+            <div class="flex justify-center">
+                <img id="preview" class="max-h-96 max-w-full object-contain rounded-lg border border-gray-200 dark:border-gray-700" src="" alt="Preview da imagem">
+            </div>
+        </div>
+
+        <div id="exif-data" class="hidden">
+            <h2 class="text-xl font-semibold mb-4">Metadados EXIF:</h2>
+
+            <div class="mb-6 bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <h3 class="text-lg font-medium mb-3">📅 Informações de Data</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="info-block"><p class="text-sm font-medium">Data Original:</p><p id="datetime-original" class="text-base">-</p></div>
+                    <div class="info-block"><p class="text-sm font-medium">Data de Criação do Arquivo:</p><p id="datetime" class="text-base">-</p></div>
+                    <div class="info-block"><p class="text-sm font-medium">Data de Modificação:</p><p id="datetime-digitized" class="text-base">-</p></div>
+                    <div class="info-block"><p class="text-sm font-medium">Status de Modificação:</p><p id="modification-status" class="text-base">-</p></div>
+                </div>
+            </div>
+
+            <div class="mb-6 bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <h3 class="text-lg font-medium mb-3">🛠️ Informações de Software</h3>
+                <div class="info-block"><p class="text-sm font-medium">Software de Edição:</p><p id="software" class="text-base">-</p></div>
+            </div>
+
+            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <h3 class="text-lg font-medium mb-3">📜 Todos os Metadados EXIF</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white dark:bg-gray-700 rounded-lg overflow-hidden">
+                        <thead class="bg-gray-100 dark:bg-gray-600">
+                            <tr><th class="py-2 px-4 text-left">Tag</th><th class="py-2 px-4 text-left">Valor</th></tr>
+                        </thead>
+                        <tbody id="all-metadata"><tr><td colspan="2" class="py-2 px-4 text-center text-gray-500 dark:text-gray-400">Nenhum dado EXIF encontrado</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
 </body>
 </html>
